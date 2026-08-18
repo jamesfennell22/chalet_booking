@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ski Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Supabase (free shared database — see setup steps from Claude) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0C1310;
+    --panel:#141F1A;
+    --panel-raised:#1A2822;
+    --snow:#F2F0EA;
+    --muted:#8CA095;
+    --amber:#E2984B;
+    --amber-soft: rgba(226,152,75,0.14);
+    --green:#6FA96B;
+    --orange:#E2984B;
+    --red:#C4574C;
+    --line: rgba(242,240,234,0.07);
+    --line-strong: rgba(242,240,234,0.16);
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--snow);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:0 0 48px;}
+
+  /* ---- Header ---- */
+  header{
+    position:relative;
+    overflow:hidden;
+    padding:52px 32px 34px;
+    background:linear-gradient(155deg,#101B16 0%, var(--bg) 65%);
+    border-bottom:1px solid var(--line);
+  }
+  .contour{
+    position:absolute;
+    left:0;right:0;bottom:0;
+    width:100%;
+    height:64px;
+    opacity:0.5;
+  }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--amber);
+    margin:0 0 14px;
+    position:relative;
+    z-index:2;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(36px,5vw,54px);
+    margin:0 0 12px;
+    letter-spacing:-0.015em;
+    position:relative;
+    z-index:2;
+  }
+  .sub{
+    font-size:14px;
+    color:var(--muted);
+    margin:0;
+    position:relative;
+    z-index:2;
+    letter-spacing:0.01em;
+  }
+  .sub b{color:var(--snow);font-weight:600;}
+
+  .badge{width:11px;height:11px;flex:0 0 auto;border:1.5px solid var(--muted);background:transparent;}
+
+  /* ---- Calendar ---- */
+  .cal-scroll{
+    overflow-x:auto;
+    padding:32px 0 8px;
+    margin:0 32px;
+  }
+  table{border-collapse:separate;border-spacing:3px;min-width:100%;user-select:none;}
+  .room-col{
+    position:sticky;left:0;
+    background:var(--bg);
+    z-index:3;
+    text-align:left;
+    padding:8px 20px 8px 2px;
+    min-width:146px;
+  }
+  th.room-col{z-index:4;}
+  .day-col{
+    min-width:44px;
+    text-align:center;
+    padding:4px 2px 8px;
+    font-family:var(--font-mono);
+  }
+  .dow{
+    font-size:9px;
+    letter-spacing:0.04em;
+    color:var(--muted);
+    text-transform:uppercase;
+  }
+  .dnum{
+    font-size:13.5px;
+    font-weight:500;
+    margin-top:3px;
+  }
+  .weekend .dow, .weekend .dnum{color:var(--amber);}
+
+  tr.room-row td.cell{
+    height:46px;
+    text-align:center;
+    vertical-align:middle;
+    cursor:pointer;
+    border-radius:7px;
+    transition:filter 0.12s ease, transform 0.08s ease;
+    position:relative;
+  }
+  tr.room-row td.cell:hover{filter:brightness(1.25);}
+  tr.room-row td.cell:active{transform:scale(0.96);}
+  tr.room-row td.cell.state-empty{background:rgba(111,169,107,0.14);}
+  tr.room-row td.cell.state-half{background:rgba(226,152,75,0.20);}
+  tr.room-row td.cell.state-full{background:rgba(196,87,76,0.24);}
+  tr.room-row td.cell.selecting{
+    background:var(--amber-soft) !important;
+    outline:1.5px solid var(--amber);
+    outline-offset:-1.5px;
+  }
+
+  .room-name-cell{
+    display:flex;align-items:center;gap:8px;
+  }
+  .room-name-cell b{font-size:13.5px;font-weight:600;}
+  .room-name-cell span{font-size:11px;color:var(--muted);font-family:var(--font-mono);}
+
+  .chip-stack{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    align-items:center;
+    justify-content:center;
+    padding:2px;
+  }
+  .chip{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    font-weight:500;
+    color:#0F1D18;
+    background:var(--snow);
+    border-radius:4px;
+    padding:1px 5px;
+    line-height:1.5;
+    max-width:56px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .plus{
+    opacity:0;
+    color:var(--muted);
+    font-size:16px;
+    transition:opacity 0.12s ease;
+  }
+  tr.room-row td.cell:hover .plus{opacity:0.6;}
+
+  /* piste shapes */
+  .shape-circle{border-radius:50%;}
+  .shape-square{border-radius:2px;}
+  .shape-diamond{border-radius:2px;transform:rotate(45deg);}
+
+  /* ---- Summary ---- */
+  .summary{
+    margin:32px 32px 0;
+    padding-top:22px;
+    border-top:1px solid var(--line);
+  }
+  .summary h2{
+    font-family:var(--font-display);
+    font-size:19px;
+    font-weight:600;
+    margin:0 0 16px;
+    letter-spacing:-0.01em;
+  }
+  .bar-row{
+    display:grid;
+    grid-template-columns:120px 1fr 40px;
+    align-items:center;
+    gap:12px;
+    margin-bottom:8px;
+    font-size:13px;
+  }
+  .bar-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bar-track{background:var(--panel-raised);border-radius:5px;height:8px;overflow:hidden;}
+  .bar-fill{background:linear-gradient(90deg,var(--amber),#F4C98A);height:100%;border-radius:5px;}
+  .bar-count{font-family:var(--font-mono);color:var(--muted);text-align:right;}
+  .empty-note{color:var(--muted);font-size:13px;}
+
+  .hint{font-size:12.5px;color:var(--muted);text-align:center;margin:30px 32px 0;}
+
+  /* ---- Modal ---- */
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(6,12,9,0.6);
+    backdrop-filter:blur(2px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .overlay.hidden{display:none;}
+  .modal{
+    background:var(--panel);
+    border:1px solid var(--line-strong);
+    border-radius:14px;
+    width:100%;
+    max-width:380px;
+    padding:24px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+  }
+  .modal-room{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:4px;
+  }
+  .modal-room b{font-family:var(--font-display);font-size:18px;font-weight:600;}
+  .modal-range{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--muted);
+    margin:0 0 18px;
+  }
+  .modal-occupants{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:16px;
+    min-height:20px;
+  }
+  .modal-empty{color:var(--muted);font-size:13px;}
+  .name-chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--panel-raised);
+    border:1px solid var(--line-strong);
+    border-radius:999px;
+    padding:6px 6px 6px 13px;
+    font-size:13px;
+  }
+  .name-chip span.count{color:var(--muted);font-family:var(--font-mono);font-size:11px;}
+  .name-chip button{
+    background:var(--line-strong);
+    border:none;
+    color:var(--snow);
+    width:18px;height:18px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:12px;
+    line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .name-chip button:hover{background:var(--red);}
+  .modal-form{
+    display:flex;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .modal-form input{
+    flex:1;
+    background:var(--panel-raised);
+    border:1px solid var(--line-strong);
+    color:var(--snow);
+    font-family:var(--font-body);
+    font-size:14px;
+    padding:9px 13px;
+    border-radius:8px;
+    outline:none;
+  }
+  .modal-form input:focus{border-color:var(--amber);}
+  .modal-form button{
+    background:var(--amber);
+    border:none;
+    color:#1B1208;
+    font-weight:600;
+    font-size:13.5px;
+    padding:0 16px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .modal-note{font-size:12px;color:var(--amber);min-height:16px;margin-bottom:10px;}
+  .modal-close{
+    width:100%;
+    background:none;
+    border:1px solid var(--line-strong);
+    color:var(--muted);
+    padding:9px;
+    border-radius:8px;
+    font-family:var(--font-body);
+    font-size:13.5px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .modal-close:hover{color:var(--snow);border-color:var(--snow);}
+
+  @media (max-width:640px){
+    header{padding:32px 18px 22px;}
+    .cal-scroll, .summary, .hint{margin-left:18px;margin-right:18px;padding-left:0;padding-right:0;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg class="contour" viewBox="0 0 1100 64" preserveAspectRatio="none">
+      <path d="M0,50 L140,30 L260,46 L400,18 L560,42 L720,22 L880,44 L1000,28 L1100,38" fill="none" style="stroke:var(--amber)" stroke-width="1" opacity="0.55"/>
+    </svg>
+    <p class="eyebrow">Shared trip calendar</p>
+    <h1>Ski Calendar</h1>
+    <p class="sub">Nights of <b>16 Jan – 12 Feb</b> &nbsp;·&nbsp; 3 rooms &nbsp;·&nbsp; 6 guests &nbsp;·&nbsp; departure 13 Feb</p>
+  </header>
+
+  <div class="cal-scroll">
+    <table id="cal-table"></table>
+  </div>
+
+  <div class="summary">
+    <h2>Nights booked</h2>
+    <div id="summary-body"><p class="empty-note">Loading…</p></div>
+  </div>
+
+  <p class="hint">Click a night — or drag across several — to add or remove names for that room.</p>
+</div>
+
+<div class="overlay hidden" id="overlay">
+  <div class="modal">
+    <div class="modal-room">
+      <div class="badge" id="modal-badge"></div>
+      <b id="modal-room-name"></b>
+    </div>
+    <p class="modal-range" id="modal-range"></p>
+    <div class="modal-occupants" id="modal-occupants"></div>
+    <div class="modal-form">
+      <input id="modal-input" type="text" list="guest-list" placeholder="Add a name" autocomplete="off">
+      <button type="button" id="modal-add-btn">Add</button>
+    </div>
+    <datalist id="guest-list"></datalist>
+    <p class="modal-note" id="modal-note"></p>
+    <button class="modal-close" id="modal-close">Done</button>
+  </div>
+</div>
+
+<script>
+const ROOMS = [
+  {id:'r1', name:'Room 1', cap:2, shape:'circle', color:'var(--green)'},
+  {id:'r2', name:'Room 2', cap:2, shape:'square', color:'var(--blue)'},
+  {id:'r3', name:'Room 3', cap:2, shape:'diamond', color:'var(--red)'}
+];
+
+function buildDates(){
+  const dates = [];
+  let d = new Date(Date.UTC(2027,0,16)); // Jan 16 2027
+  const end = new Date(Date.UTC(2027,1,12)); // Feb 12 2027 (last night)
+  while(d <= end){
+    dates.push(new Date(d));
+    d.setUTCDate(d.getUTCDate()+1);
+  }
+  return dates;
+}
+const DATES = buildDates();
+function dkey(d){ return d.toISOString().slice(0,10); }
+function fmt(dateStr){
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});
+}
+
+// ======= PASTE YOUR SUPABASE PROJECT URL AND ANON KEY BELOW (see setup steps) =======
+const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_PUBLIC_KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ======================================================================================
+
+let bookings = {};   // { "r1_2027-01-16": ["Alice","Bob"] }
+let guests = [];     // all names ever used, for autocomplete
+
+async function loadAll(){
+  try{
+    const { data, error } = await supabase.from('app_state').select('key,value');
+    if(error) throw error;
+    (data || []).forEach(row => {
+      if(row.key === 'bookings') bookings = row.value || {};
+      if(row.key === 'guests') guests = row.value || [];
+    });
+  }catch(e){ console.error('Failed to load data', e); }
+}
+
+// Live-sync: whenever anyone changes the data, every open tab updates automatically.
+supabase.channel('app_state_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state' }, payload => {
+    const row = payload.new;
+    if(!row) return;
+    if(row.key === 'bookings'){
+      bookings = row.value || {};
+      renderTable();
+      renderSummary();
+      if(panelRoom) renderModalOccupants();
+    }
+    if(row.key === 'guests'){
+      guests = row.value || [];
+      renderGuestDatalist();
+    }
+  })
+  .subscribe();
+
+async function saveBookings(){
+  try{
+    const { error } = await supabase.from('app_state').upsert({ key: 'bookings', value: bookings });
+    if(error) throw error;
+  }catch(e){ console.error('Failed to save bookings', e); alert('Could not save — check your connection and try again.'); }
+}
+async function saveGuests(){
+  try{
+    const { error } = await supabase.from('app_state').upsert({ key: 'guests', value: guests });
+    if(error) throw error;
+  }catch(e){ console.error('Failed to save guests', e); }
+}
+
+function initials(name){
+  const parts = name.trim().split(/\s+/);
+  if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function renderGuestDatalist(){
+  document.getElementById('guest-list').innerHTML = guests.map(g => `<option value="${g}">`).join('');
+}
+
+function renderTable(){
+  const table = document.getElementById('cal-table');
+  let thead = '<thead><tr><th class="room-col"></th>';
+  DATES.forEach(d => {
+    const isWeekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
+    const isWeekStart = d.getUTCDay() === 1;
+    thead += `<th class="day-col ${isWeekend?'weekend':''} ${isWeekStart?'week-start':''}">
+      <div class="dow">${d.toLocaleDateString('en-GB',{weekday:'short',timeZone:'UTC'})}</div>
+      <div class="dnum">${d.getUTCDate()}</div>
+    </th>`;
+  });
+  thead += '</tr></thead>';
+
+  let tbody = '<tbody>';
+  ROOMS.forEach(r => {
+    tbody += `<tr class="room-row"><td class="room-col"><div class="room-name-cell">
+      <div class="badge shape-${r.shape}"></div>
+      <div><b>${r.name}</b><br><span>sleeps ${r.cap}</span></div>
+    </div></td>`;
+    DATES.forEach(d => {
+      const key = r.id + '_' + dkey(d);
+      const occ = bookings[key] || [];
+      const isWeekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
+      const isWeekStart = d.getUTCDay() === 1;
+      const state = occ.length === 0 ? 'state-empty' : (occ.length >= r.cap ? 'state-full' : 'state-half');
+      let inner = '<span class="plus">+</span>';
+      if(occ.length){
+        inner = '<div class="chip-stack">' + occ.map(n => `<span class="chip" title="${n}">${initials(n)}</span>`).join('') + '</div>';
+      }
+      tbody += `<td class="cell ${isWeekend?'weekend':''} ${isWeekStart?'week-start':''} ${state}"
+        data-room="${r.id}" data-date="${dkey(d)}">${inner}</td>`;
+    });
+    tbody += '</tr>';
+  });
+  tbody += '</tbody>';
+  table.innerHTML = thead + tbody;
+  attachCellHandlers();
+}
+
+/* ---- Drag selection across nights within one room row ---- */
+let isDragging = false;
+let dragRoom = null;
+let dragStart = null;
+let dragEnd = null;
+
+function attachCellHandlers(){
+  document.querySelectorAll('td.cell').forEach(td => {
+    td.addEventListener('mousedown', e => { e.preventDefault(); startDrag(td.dataset.room, td.dataset.date); });
+    td.addEventListener('mouseenter', () => updateDrag(td.dataset.room, td.dataset.date));
+    td.addEventListener('touchstart', e => { startDrag(td.dataset.room, td.dataset.date); }, {passive:true});
+    td.addEventListener('touchmove', e => {
+      const t = e.touches[0];
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      const cell = el && el.closest('td.cell');
+      if(cell) updateDrag(cell.dataset.room, cell.dataset.date);
+    }, {passive:true});
+  });
+}
+
+function startDrag(roomId, date){
+  isDragging = true;
+  dragRoom = roomId;
+  dragStart = date;
+  dragEnd = date;
+  highlightSelection();
+}
+function updateDrag(roomId, date){
+  if(!isDragging || roomId !== dragRoom) return;
+  dragEnd = date;
+  highlightSelection();
+}
+function highlightSelection(){
+  document.querySelectorAll('td.cell.selecting').forEach(td => td.classList.remove('selecting'));
+  const lo = dragStart <= dragEnd ? dragStart : dragEnd;
+  const hi = dragStart <= dragEnd ? dragEnd : dragStart;
+  document.querySelectorAll(`td.cell[data-room="${dragRoom}"]`).forEach(td => {
+    if(td.dataset.date >= lo && td.dataset.date <= hi) td.classList.add('selecting');
+  });
+}
+function endDrag(){
+  if(!isDragging) return;
+  isDragging = false;
+  openPanel(dragRoom, dragStart, dragEnd);
+}
+document.addEventListener('mouseup', endDrag);
+document.addEventListener('touchend', endDrag);
+
+/* ---- Modal panel ---- */
+let panelRoom = null, panelLo = null, panelHi = null;
+
+function openPanel(roomId, a, b){
+  panelRoom = roomId;
+  panelLo = a <= b ? a : b;
+  panelHi = a <= b ? b : a;
+  const room = ROOMS.find(r => r.id === roomId);
+  document.getElementById('modal-badge').className = 'badge shape-' + room.shape;
+  document.getElementById('modal-room-name').textContent = room.name;
+  const nights = (new Date(panelHi) - new Date(panelLo)) / 86400000 + 1;
+  document.getElementById('modal-range').textContent =
+    panelLo === panelHi ? fmt(panelLo) + ' · 1 night' : fmt(panelLo) + ' – ' + fmt(panelHi) + ' · ' + nights + ' nights';
+  document.getElementById('modal-note').textContent = '';
+  renderGuestDatalist();
+  renderModalOccupants();
+  document.getElementById('overlay').classList.remove('hidden');
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal-input').focus();
+}
+
+function rangeDates(){
+  return DATES.map(dkey).filter(k => k >= panelLo && k <= panelHi);
+}
+
+function renderModalOccupants(){
+  const room = ROOMS.find(r => r.id === panelRoom);
+  const dates = rangeDates();
+  const counts = {};
+  dates.forEach(d => {
+    (bookings[panelRoom + '_' + d] || []).forEach(n => { counts[n] = (counts[n]||0) + 1; });
+  });
+  const names = Object.keys(counts);
+  const el = document.getElementById('modal-occupants');
+  if(names.length === 0){
+    el.innerHTML = '<span class="modal-empty">No one booked yet for this room on these nights.</span>';
+    return;
+  }
+  el.innerHTML = names.map(n => `
+    <span class="name-chip">${n} ${counts[n] < dates.length ? `<span class="count">${counts[n]}/${dates.length}n</span>` : ''}
+      <button data-name="${n}" title="Remove from selected nights">✕</button>
+    </span>
+  `).join('');
+  el.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => removeFromRange(btn.dataset.name));
+  });
+}
+
+async function addToRange(name){
+  name = name.trim();
+  if(!name) return;
+  const room = ROOMS.find(r => r.id === panelRoom);
+  const dates = rangeDates();
+  let skipped = 0;
+  dates.forEach(d => {
+    const key = panelRoom + '_' + d;
+    const occ = bookings[key] || [];
+    if(occ.includes(name)) return;
+    if(occ.length >= room.cap){ skipped++; return; }
+    bookings[key] = [...occ, name];
+  });
+  if(!guests.includes(name)){
+    guests.push(name);
+    await saveGuests();
+  }
+  document.getElementById('modal-note').textContent = skipped
+    ? `${room.name} was already full on ${skipped} night${skipped===1?'':'s'} — added where there was space.`
+    : '';
+  renderModalOccupants();
+  renderTable();
+  highlightSelection();
+  renderSummary();
+  await saveBookings();
+}
+
+async function removeFromRange(name){
+  const dates = rangeDates();
+  dates.forEach(d => {
+    const key = panelRoom + '_' + d;
+    const occ = bookings[key] || [];
+    if(occ.includes(name)){
+      bookings[key] = occ.filter(n => n !== name);
+      if(bookings[key].length === 0) delete bookings[key];
+    }
+  });
+  renderModalOccupants();
+  renderTable();
+  highlightSelection();
+  renderSummary();
+  await saveBookings();
+}
+
+function submitAddName(){
+  const input = document.getElementById('modal-input');
+  addToRange(input.value);
+  input.value = '';
+  input.focus();
+}
+document.getElementById('modal-add-btn').addEventListener('click', submitAddName);
+document.getElementById('modal-input').addEventListener('keydown', e => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    submitAddName();
+  }
+});
+
+function closePanel(){
+  document.getElementById('overlay').classList.add('hidden');
+  document.querySelectorAll('td.cell.selecting').forEach(td => td.classList.remove('selecting'));
+  panelRoom = null;
+}
+document.getElementById('modal-close').addEventListener('click', closePanel);
+document.getElementById('overlay').addEventListener('click', e => {
+  if(e.target.id === 'overlay') closePanel();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closePanel();
+});
+
+/* ---- Summary ---- */
+function renderSummary(){
+  const totals = {};
+  Object.values(bookings).forEach(list => {
+    list.forEach(n => { totals[n] = (totals[n]||0) + 1; });
+  });
+  const el = document.getElementById('summary-body');
+  const names = Object.keys(totals).sort((a,b) => totals[b]-totals[a]);
+  if(names.length === 0){
+    el.innerHTML = '<p class="empty-note">No nights booked yet — click a cell in the calendar to start.</p>';
+    return;
+  }
+  const max = Math.max(...names.map(n => totals[n]));
+  el.innerHTML = names.map(n => `
+    <div class="bar-row">
+      <div class="bar-name">${n}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(totals[n]/max*100).toFixed(0)}%"></div></div>
+      <div class="bar-count">${totals[n]}</div>
+    </div>
+  `).join('');
+}
+
+async function init(){
+  await loadAll();
+  renderTable();
+  renderSummary();
+}
+init();
+</script>
+</body>
+</html>
