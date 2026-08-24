@@ -48,20 +48,32 @@ function step(label, cls, detail){
     return;
   }
 
-  step('3. Querying booking_requests table (10 second timeout)...', 'pending');
+  step('3. Setting up realtime channel subscription (like the real app does)...', 'pending');
+  try{
+    supabase.channel('booking_requests_changes_test')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'booking_requests' }, () => {})
+      .subscribe((status) => {
+        step('3b. Realtime subscription status changed: ' + status, status === 'SUBSCRIBED' ? 'ok' : 'pending');
+      });
+    step('3. Realtime channel().subscribe() call completed without throwing', 'ok');
+  }catch(e){
+    step('3. Realtime subscription setup FAILED', 'fail', String(e));
+  }
+
+  step('4. Querying booking_requests table WITH .order() — exact query the real app uses (10s timeout)...', 'pending');
   const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMED OUT after 10s — request never returned at all')), 10000));
   try{
     const result = await Promise.race([
-      supabase.from('booking_requests').select('*'),
+      supabase.from('booking_requests').select('*').order('start_date'),
       timeoutPromise
     ]);
     if(result.error){
-      step('3. Query returned an ERROR', 'fail', JSON.stringify(result.error, null, 2));
+      step('4. Query with .order() returned an ERROR', 'fail', JSON.stringify(result.error, null, 2));
     } else {
-      step('3. Query SUCCEEDED', 'ok', 'Rows returned: ' + result.data.length + '\n\n' + JSON.stringify(result.data, null, 2));
+      step('4. Query with .order() SUCCEEDED', 'ok', 'Rows returned: ' + result.data.length);
     }
   }catch(e){
-    step('3. Query FAILED / timed out', 'fail', String(e && e.message || e));
+    step('4. Query with .order() FAILED / timed out', 'fail', String(e && e.message || e));
   }
 })();
 </script>
