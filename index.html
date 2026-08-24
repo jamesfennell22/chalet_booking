@@ -279,11 +279,18 @@ function nightsOf(r){ return Math.round((new Date(r.endDate) - new Date(r.startD
 function roomOf(id){ return ROOMS.find(r => r.id === id); }
 
 let requests = [];
+let setupError = null;
 
 // ======= PASTE YOUR SUPABASE PROJECT URL AND ANON/PUBLISHABLE KEY BELOW =======
 const SUPABASE_URL = 'https://kmjxhtgkcvkilluquogw.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_oQaCmNxNMRb9PECr806PuA_Ysi9htcS';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase = null;
+try{
+  if(!window.supabase) throw new Error('The Supabase script did not load — check your internet connection or ad blocker, then reload.');
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}catch(e){
+  setupError = e.message;
+}
 // ================================================================================
 
 function notify(msg){
@@ -309,26 +316,30 @@ function rowToRequest(row){
 }
 
 async function loadAll(){
+  if(!supabase) return;
   try{
     const { data, error } = await supabase.from('booking_requests').select('*').order('start_date');
     if(error) throw error;
     requests = (data || []).map(rowToRequest);
   }catch(e){
     console.error('Failed to load requests', e);
+    setupError = 'Could not load data: ' + (e.message || JSON.stringify(e));
     requests = [];
   }
 }
 
 // Live-sync: whenever anyone (or the admin) changes a booking, every open tab refreshes.
-supabase.channel('booking_requests_changes')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'booking_requests' }, async () => {
-    await loadAll();
-    renderTable();
-    renderSummary();
-    if(panelRoom) renderModalBody();
-    if(isAdmin && !document.getElementById('admin-view').classList.contains('hidden')) renderAdmin();
-  })
-  .subscribe();
+if(supabase){
+  supabase.channel('booking_requests_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'booking_requests' }, async () => {
+      await loadAll();
+      renderTable();
+      renderSummary();
+      if(panelRoom) renderModalBody();
+      if(isAdmin && !document.getElementById('admin-view').classList.contains('hidden')) renderAdmin();
+    })
+    .subscribe();
+}
 
 function isInactive(status){ return status === 'rejected'; }
 
@@ -568,13 +579,17 @@ document.addEventListener('keydown', e => {
 
 /* ---- Summary ---- */
 function renderSummary(){
+  const el = document.getElementById('summary-body');
+  if(setupError){
+    el.innerHTML = '<p class="empty-note" style="color:var(--red)">' + setupError + '</p>';
+    return;
+  }
   const totals = {};
   requests.forEach(r => {
     if(isInactive(r.status)) return;
     totals[r.name] = totals[r.name] || {confirmed:0, pending:0};
     totals[r.name][r.status] += nightsOf(r);
   });
-  const el = document.getElementById('summary-body');
   const names = Object.keys(totals).sort((a,b) => (totals[b].confirmed - totals[a].confirmed) || (totals[b].pending - totals[a].pending));
   if(names.length === 0){
     el.innerHTML = '<p class="empty-note">No requests yet — click a cell in the calendar to start.</p>';
@@ -714,7 +729,14 @@ document.getElementById('admin-body').addEventListener('click', async (e) => {
 });
 
 async function init(){
+  const timeout = setTimeout(() => {
+    if(!setupError){
+      setupError = 'Still stuck after 8 seconds — likely a Supabase connection or permissions issue. Check the table name, RLS policies, and that Realtime is enabled.';
+      renderSummary();
+    }
+  }, 8000);
   await loadAll();
+  clearTimeout(timeout);
   renderTable();
   renderSummary();
 }
