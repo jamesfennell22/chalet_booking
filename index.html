@@ -192,19 +192,19 @@
     <svg class="contour" viewBox="0 0 1100 64" preserveAspectRatio="none">
       <path d="M0,50 L140,30 L260,46 L400,18 L560,42 L720,22 L880,44 L1000,28 L1100,38" fill="none" style="stroke:var(--amber)" stroke-width="1" opacity="0.55"/>
     </svg>
-    <p class="eyebrow">Shared trip calendar · build 7</p>
+    <p class="eyebrow">Shared trip calendar - build 7</p>
     <h1>Ski Calendar</h1>
-    <p class="sub">Nights of <b>16 Jan – 12 Feb</b> &nbsp;·&nbsp; 3 rooms &nbsp;·&nbsp; 6 guests &nbsp;·&nbsp; departure 13 Feb</p>
+    <p class="sub">Nights of <b>16 Jan - 12 Feb</b> &nbsp;-&nbsp; 3 rooms &nbsp;-&nbsp; 6 guests &nbsp;-&nbsp; departure 13 Feb</p>
   </header>
 
   <div class="cal-scroll"><table id="cal-table"></table></div>
 
   <div class="summary">
     <h2>Nights requested</h2>
-    <div id="summary-body"><p class="empty-note">Loading…</p></div>
+    <div id="summary-body"><p class="empty-note">Loading...</p></div>
   </div>
 
-  <p class="hint">Click any night — booked or not — to open it. From there anyone can request a half, a whole room, or a bunk, or remove an existing booking, no login needed. Liz approves each request before it's confirmed.</p>
+  <p class="hint">Click any night -- booked or not -- to open it. From there anyone can request a half, a whole room, or a bunk, or remove an existing booking, no login needed. Liz approves each request before it's confirmed.</p>
 </div>
 
 <div class="wrap hidden" id="admin-view">
@@ -213,7 +213,7 @@
     <h1>Booking requests</h1>
     <p class="sub">Approve, decline, or edit any request below.</p>
     <div class="admin-actions">
-      <button id="admin-back">← Back to calendar</button>
+      <button id="admin-back"><- Back to calendar</button>
       <button id="admin-logout">Log out</button>
     </div>
   </header>
@@ -246,7 +246,7 @@
 </div>
 
 <script>
-document.getElementById('summary-body').innerHTML = '<p class="empty-note">Script started running, connecting to Supabase…</p>';
+document.getElementById('summary-body').innerHTML = '<p class="empty-note">Script started running, connecting to Supabase...</p>';
 
 window.addEventListener('error', function(e){
   console.error('UNCAUGHT ERROR:', e.error || e.message, e);
@@ -266,9 +266,9 @@ const TRIP_END = '2027-02-12';
 const ADMIN_PASSWORD = 'ski>board';
 
 const ROOMS = [
-  {id:'r1', name:'Room 1', type:'double', desc:'Double bed · book half or whole', slotLabels:['Half 1','Half 2']},
-  {id:'r2', name:'Room 2', type:'double', desc:'Double bed · book half or whole', slotLabels:['Half 1','Half 2']},
-  {id:'r3', name:'Room 3', type:'bunk', desc:'Bunk beds · 2 singles', slotLabels:['Top bunk','Bottom bunk']}
+  {id:'r1', name:'Room 1', type:'double', desc:'Double bed - book half or whole', slotLabels:['Half 1','Half 2']},
+  {id:'r2', name:'Room 2', type:'double', desc:'Double bed - book half or whole', slotLabels:['Half 1','Half 2']},
+  {id:'r3', name:'Room 3', type:'bunk', desc:'Bunk beds - 2 singles', slotLabels:['Top bunk','Bottom bunk']}
 ];
 
 function buildDates(){
@@ -301,7 +301,7 @@ const SUPABASE_URL = 'https://kmjxhtgkcvkilluquogw.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_oQaCmNxNMRb9PECr806PuA_Ysi9htcS';
 let supabase = null;
 try{
-  if(!window.supabase) throw new Error('The Supabase script did not load — check your internet connection or ad blocker, then reload.');
+  if(!window.supabase) throw new Error('The Supabase script did not load -- check your internet connection or ad blocker, then reload.');
   supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }catch(e){
   setupError = e.message;
@@ -314,7 +314,7 @@ function notify(msg){
 }
 function safeConfirm(msg){
   try{ return window.confirm(msg); }
-  catch(e){ console.warn('confirm() unavailable in this preview — proceeding by default:', e); return true; }
+  catch(e){ console.warn('confirm() unavailable in this preview -- proceeding by default:', e); return true; }
 }
 
 function rowToRequest(row){
@@ -381,22 +381,22 @@ function knownNames(){ return [...new Set(requests.map(r => r.name))].sort(); }
 async function addRequest(roomId, slotIndex, name, lo, hi){
   name = name.trim();
   if(!name) return {ok:false, msg:'Enter a name.'};
-  if(!isSlotFreeForRange(roomId, slotIndex, lo, hi)) return {ok:false, msg:'That option is no longer free for these dates — see below.'};
+  if(!isSlotFreeForRange(roomId, slotIndex, lo, hi)) return {ok:false, msg:'That option is no longer free for these dates -- see below.'};
   const { error } = await supabase.from('booking_requests').insert({
     room_id: roomId, slot_index: slotIndex, guest_name: name,
     start_date: lo, end_date: hi, status: 'pending'
   });
   if(error){
     console.error('Insert failed', error);
-    if(error.code === '23P01') return {ok:false, msg:'Someone just booked that at the same moment — please pick different dates.'};
-    return {ok:false, msg:'Could not save that request — please try again.'};
+    if(error.code === '23P01') return {ok:false, msg:'Someone just booked that at the same moment -- please pick different dates.'};
+    return {ok:false, msg:'Could not save that request -- please try again.'};
   }
   await loadAll();
   return {ok:true};
 }
 async function removeRequest(id){
   const { error } = await supabase.from('booking_requests').delete().eq('id', id);
-  if(error){ console.error('Delete failed', error); notify('Could not remove that booking — please try again.'); return; }
+  if(error){ console.error('Delete failed', error); notify('Could not remove that booking -- please try again.'); return; }
   await loadAll();
 }
 async function updateRequestFields(id, fields){
@@ -411,7 +411,7 @@ async function updateRequestFields(id, fields){
   if(error){
     console.error('Update failed', error);
     if(error.code === '23P01') notify('That change would overlap another active booking for the same slot.');
-    else notify('Could not save that change — please try again.');
+    else notify('Could not save that change -- please try again.');
     return false;
   }
   await loadAll();
@@ -439,9 +439,9 @@ function renderTable(){
       const date = dkey(d);
       const slots = [0,1].map(idx => {
         const req = activeRequestFor(r.id, idx, date);
-        if(!req) return '<div class="slot-mini slot-empty">·</div>';
+        if(!req) return '<div class="slot-mini slot-empty">-</div>';
         const cls = req.status === 'confirmed' ? 'slot-confirmed' : 'slot-pending';
-        return `<div class="slot-mini ${cls}" title="${req.name} · ${req.status} — click to view or remove">${initials(req.name)}</div>`;
+        return `<div class="slot-mini ${cls}" title="${req.name} - ${req.status} -- click to view or remove">${initials(req.name)}</div>`;
       }).join('');
       tbody += `<td class="cell ${isWeekend?'weekend':''}" data-room="${r.id}" data-date="${date}">
         <div class="cell-slots type-${r.type}">
@@ -498,10 +498,10 @@ function openPanel(roomId, a, b){
   panelLo = a <= b ? a : b;
   panelHi = a <= b ? b : a;
   const room = roomOf(roomId);
-  document.getElementById('modal-room-name').textContent = room.name + ' — ' + room.desc;
+  document.getElementById('modal-room-name').textContent = room.name + ' -- ' + room.desc;
   const nights = nightsOf({startDate:panelLo, endDate:panelHi});
   document.getElementById('modal-range').textContent =
-    panelLo === panelHi ? fmt(panelLo) + ' · 1 night' : fmt(panelLo) + ' – ' + fmt(panelHi) + ' · ' + nights + ' nights';
+    panelLo === panelHi ? fmt(panelLo) + ' - 1 night' : fmt(panelLo) + ' - ' + fmt(panelHi) + ' - ' + nights + ' nights';
   document.getElementById('guest-list').innerHTML = knownNames().map(n => `<option value="${n}">`).join('');
   renderModalBody();
   document.getElementById('overlay').classList.remove('hidden');
@@ -515,8 +515,8 @@ function renderModalBody(){
   if(bothFree){
     html += `<button type="button" class="whole-room-btn" id="whole-toggle">Book the whole room for two (${room.type === 'double' ? 'whole bed' : 'both bunks'})</button>
     <div class="whole-form" id="whole-form">
-      <input type="text" id="whole-name-0" list="guest-list" placeholder="${room.slotLabels[0]} — name">
-      <input type="text" id="whole-name-1" list="guest-list" placeholder="${room.slotLabels[1]} — name">
+      <input type="text" id="whole-name-0" list="guest-list" placeholder="${room.slotLabels[0]} -- name">
+      <input type="text" id="whole-name-1" list="guest-list" placeholder="${room.slotLabels[1]} -- name">
       <button type="button" id="whole-submit">Request whole room</button>
     </div>`;
   }
@@ -534,7 +534,7 @@ function renderModalBody(){
       conflictsFor(panelRoom, idx, panelLo, panelHi).forEach(r => {
         html += `<div class="occ-chip">
           <span>${r.name} <span class="status-tag ${r.status}">${r.status}</span></span>
-          <button type="button" class="remove-btn" data-id="${r.id}" data-status="${r.status}" title="Remove this booking">✕</button>
+          <button type="button" class="remove-btn" data-id="${r.id}" data-status="${r.status}" title="Remove this booking">x</button>
         </div>`;
       });
       html += `<p class="slot-note">${room.slotLabels[idx]} isn't free for the whole selected range. Pick a shorter range, or withdraw the pending request above.</p>`;
@@ -578,9 +578,9 @@ document.getElementById('modal-body').addEventListener('click', async (e) => {
 
   const removeBtn = e.target.closest('.remove-btn');
   if(removeBtn){
-    removeBtn.textContent = '…';
+    removeBtn.textContent = '...';
     if(removeBtn.dataset.status === 'confirmed' && !safeConfirm('Remove this confirmed booking? The bed will become free for others to request.')){
-      removeBtn.textContent = '✕';
+      removeBtn.textContent = 'x';
       return;
     }
     await removeRequest(removeBtn.dataset.id);
@@ -616,7 +616,7 @@ function renderSummary(){
   });
   const names = Object.keys(totals).sort((a,b) => (totals[b].confirmed - totals[a].confirmed) || (totals[b].pending - totals[a].pending));
   if(names.length === 0){
-    el.innerHTML = '<p class="empty-note">No requests yet — click a cell in the calendar to start.</p>';
+    el.innerHTML = '<p class="empty-note">No requests yet -- click a cell in the calendar to start.</p>';
     return;
   }
   const max = Math.max(...names.map(n => totals[n].confirmed + totals[n].pending), 1);
@@ -738,7 +738,7 @@ document.getElementById('admin-body').addEventListener('click', async (e) => {
     const end = row.querySelector('.adm-end').value;
     const roomId = row.querySelector('.adm-room').value;
     const slotIndex = Number(row.querySelector('.adm-slot').value);
-    if(!name || !start || !end || start > end){ notify('Check the name and dates — the start must be on or before the end.'); return; }
+    if(!name || !start || !end || start > end){ notify('Check the name and dates -- the start must be on or before the end.'); return; }
     await updateRequestFields(id, { roomId, slotIndex, name, startDate: start, endDate: end });
     renderAdmin();
     return;
@@ -755,7 +755,7 @@ document.getElementById('admin-body').addEventListener('click', async (e) => {
 async function init(){
   const timeout = setTimeout(() => {
     if(!setupError){
-      setupError = 'Still stuck after 8 seconds — likely a Supabase connection or permissions issue. Check the table name, RLS policies, and that Realtime is enabled.';
+      setupError = 'Still stuck after 8 seconds -- likely a Supabase connection or permissions issue. Check the table name, RLS policies, and that Realtime is enabled.';
       renderSummary();
     }
   }, 8000);
