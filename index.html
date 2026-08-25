@@ -299,10 +299,10 @@ let setupError = null;
 // ======= PASTE YOUR SUPABASE PROJECT URL AND ANON/PUBLISHABLE KEY BELOW =======
 const SUPABASE_URL = 'https://kmjxhtgkcvkilluquogw.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_oQaCmNxNMRb9PECr806PuA_Ysi9htcS';
-let supabase = null;
+var dbClient = null;
 try{
   if(!window.supabase) throw new Error('The Supabase script did not load -- check your internet connection or ad blocker, then reload.');
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }catch(e){
   setupError = e.message;
 }
@@ -331,9 +331,9 @@ function rowToRequest(row){
 }
 
 async function loadAll(){
-  if(!supabase) return;
+  if(!dbClient) return;
   try{
-    const { data, error } = await supabase.from('booking_requests').select('*').order('start_date');
+    const { data, error } = await dbClient.from('booking_requests').select('*').order('start_date');
     if(error) throw error;
     requests = (data || []).map(rowToRequest);
   }catch(e){
@@ -347,9 +347,9 @@ async function loadAll(){
 // Deferred until after the initial load succeeds, and fully isolated so a realtime hiccup
 // can never block the calendar itself from showing up.
 function setupRealtime(){
-  if(!supabase) return;
+  if(!dbClient) return;
   try{
-    supabase.channel('booking_requests_changes')
+    dbClient.channel('booking_requests_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'booking_requests' }, async () => {
         try{
           await loadAll();
@@ -382,7 +382,7 @@ async function addRequest(roomId, slotIndex, name, lo, hi){
   name = name.trim();
   if(!name) return {ok:false, msg:'Enter a name.'};
   if(!isSlotFreeForRange(roomId, slotIndex, lo, hi)) return {ok:false, msg:'That option is no longer free for these dates -- see below.'};
-  const { error } = await supabase.from('booking_requests').insert({
+  const { error } = await dbClient.from('booking_requests').insert({
     room_id: roomId, slot_index: slotIndex, guest_name: name,
     start_date: lo, end_date: hi, status: 'pending'
   });
@@ -395,7 +395,7 @@ async function addRequest(roomId, slotIndex, name, lo, hi){
   return {ok:true};
 }
 async function removeRequest(id){
-  const { error } = await supabase.from('booking_requests').delete().eq('id', id);
+  const { error } = await dbClient.from('booking_requests').delete().eq('id', id);
   if(error){ console.error('Delete failed', error); notify('Could not remove that booking -- please try again.'); return; }
   await loadAll();
 }
@@ -407,7 +407,7 @@ async function updateRequestFields(id, fields){
   if('startDate' in fields) dbFields.start_date = fields.startDate;
   if('endDate' in fields) dbFields.end_date = fields.endDate;
   if('status' in fields) dbFields.status = fields.status;
-  const { error } = await supabase.from('booking_requests').update(dbFields).eq('id', id);
+  const { error } = await dbClient.from('booking_requests').update(dbFields).eq('id', id);
   if(error){
     console.error('Update failed', error);
     if(error.code === '23P01') notify('That change would overlap another active booking for the same slot.');
