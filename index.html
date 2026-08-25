@@ -3,9 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <title>Ski Calendar - Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0C1310; --panel:#141F1A; --panel-raised:#1A2822; --snow:#F2F0EA; --muted:#8CA095;
+    --amber:#E2984B; --amber-soft: rgba(226,152,75,0.14); --green:#6FA96B; --red:#C4574C;
+    --line: rgba(242,240,234,0.07); --line-strong: rgba(242,240,234,0.16);
+    --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--snow);font-family:var(--font-body);padding:30px;}
+  h1{font-family:var(--font-display);font-weight:600;}
+  #status{font-family:var(--font-mono);font-size:13px;color:var(--muted);margin:16px 0;}
+  ul{font-family:var(--font-body);}
+  input{background:var(--panel-raised);border:1px solid var(--line-strong);color:var(--snow);padding:8px 12px;border-radius:8px;}
+  button{background:var(--amber);border:none;color:#1B1208;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer;}
+</style>
 </head>
-<body style="font-family:sans-serif;background:#111;color:#eee;padding:30px;">
+<body>
 
 <h1>Ski Calendar (base test)</h1>
 <div id="status">Waiting for script to run...</div>
