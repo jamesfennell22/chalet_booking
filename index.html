@@ -280,6 +280,12 @@ function roomOf(id){ return ROOMS.find(r => r.id === id); }
 
 let requests = [];
 
+// ======= Real Supabase client, same as index.html =======
+const SUPABASE_URL = 'https://kmjxhtgkcvkilluquogw.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_oQaCmNxNMRb9PECr806PuA_Ysi9htcS';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ==========================================================
+
 function notify(msg){
   console.log(msg);
   try{ window.alert(msg); }catch(e){ console.warn('alert() unavailable in this preview:', e); }
@@ -289,20 +295,22 @@ function safeConfirm(msg){
   catch(e){ console.warn('confirm() unavailable in this preview — proceeding by default:', e); return true; }
 }
 
-const DEMO_DATA = [
-  {id:'demo1', roomId:'r1', slotIndex:0, name:'Alice',   startDate:'2027-01-16', endDate:'2027-01-19', status:'confirmed', createdAt:Date.now()},
-  {id:'demo2', roomId:'r1', slotIndex:1, name:'Bob',     startDate:'2027-01-16', endDate:'2027-01-19', status:'pending',   createdAt:Date.now()},
-  {id:'demo3', roomId:'r2', slotIndex:0, name:'Charlie', startDate:'2027-01-20', endDate:'2027-01-24', status:'confirmed', createdAt:Date.now()},
-  {id:'demo4', roomId:'r3', slotIndex:0, name:'Dana',    startDate:'2027-02-01', endDate:'2027-02-03', status:'pending',   createdAt:Date.now()},
-  {id:'demo5', roomId:'r3', slotIndex:1, name:'Eve',     startDate:'2027-02-01', endDate:'2027-02-03', status:'confirmed', createdAt:Date.now()}
-];
+function rowToRequest(row){
+  return {
+    id: row.id, roomId: row.room_id, slotIndex: row.slot_index, name: row.guest_name,
+    startDate: row.start_date, endDate: row.end_date, status: row.status, createdAt: row.created_at
+  };
+}
 
 async function loadAll(){
-  // Demo mode: no real backend, just start from fixed sample data every time.
-  requests = JSON.parse(JSON.stringify(DEMO_DATA));
+  document.getElementById('summary-body').innerHTML = '<p class="empty-note">TEST: about to query Supabase...</p>';
+  const { data, error } = await supabase.from('booking_requests').select('*').order('start_date');
+  document.getElementById('summary-body').innerHTML = '<p class="empty-note">TEST: query returned. error=' + JSON.stringify(error) + ' rows=' + (data ? data.length : 'null') + '</p>';
+  if(error){ requests = []; return; }
+  requests = (data || []).map(rowToRequest);
 }
 async function saveAll(){
-  // Demo mode: nothing to persist — changes just live in memory for this session.
+  // This test is read-only — writes aren't tested here.
 }
 
 function isInactive(status){ return status === 'rejected'; }
