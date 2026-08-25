@@ -245,6 +245,15 @@
 </div>
 
 <script>
+document.getElementById('summary-body').innerHTML = '<p class="empty-note">STEP 0: script started running</p>';
+
+window.addEventListener('error', function(e){
+  document.getElementById('summary-body').innerHTML = '<p class="empty-note" style="color:var(--red)">UNCAUGHT ERROR: ' + e.message + ' (line ' + e.lineno + ')</p>';
+});
+window.addEventListener('unhandledrejection', function(e){
+  document.getElementById('summary-body').innerHTML = '<p class="empty-note" style="color:var(--red)">UNHANDLED REJECTION: ' + (e.reason && e.reason.message || e.reason) + '</p>';
+});
+
 const TRIP_START = '2027-01-16';
 const TRIP_END = '2027-02-12';
 const ADMIN_PASSWORD = 'ski>board';
@@ -278,12 +287,22 @@ function overlaps(aS,aE,bS,bE){ return aS <= bE && bS <= aE; }
 function nightsOf(r){ return Math.round((new Date(r.endDate) - new Date(r.startDate)) / 86400000) + 1; }
 function roomOf(id){ return ROOMS.find(r => r.id === id); }
 
+document.getElementById('summary-body').innerHTML = '<p class="empty-note">STEP 1: helper functions defined</p>';
+
 let requests = [];
 
 // ======= Real Supabase client, same as index.html =======
 const SUPABASE_URL = 'https://kmjxhtgkcvkilluquogw.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_oQaCmNxNMRb9PECr806PuA_Ysi9htcS';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase = null;
+try{
+  document.getElementById('summary-body').innerHTML = '<p class="empty-note">STEP 2: about to check window.supabase (is it: ' + typeof window.supabase + ')</p>';
+  if(!window.supabase) throw new Error('window.supabase is ' + typeof window.supabase + ' — the CDN script did not load');
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  document.getElementById('summary-body').innerHTML = '<p class="empty-note">STEP 3: client created OK</p>';
+}catch(e){
+  document.getElementById('summary-body').innerHTML = '<p class="empty-note" style="color:var(--red)">STEP 2/3 FAILED: ' + e.message + '</p>';
+}
 // ==========================================================
 
 function notify(msg){
@@ -303,11 +322,24 @@ function rowToRequest(row){
 }
 
 async function loadAll(){
-  document.getElementById('summary-body').innerHTML = '<p class="empty-note">TEST: about to query Supabase...</p>';
-  const { data, error } = await supabase.from('booking_requests').select('*').order('start_date');
-  document.getElementById('summary-body').innerHTML = '<p class="empty-note">TEST: query returned. error=' + JSON.stringify(error) + ' rows=' + (data ? data.length : 'null') + '</p>';
-  if(error){ requests = []; return; }
-  requests = (data || []).map(rowToRequest);
+  if(!supabase){
+    document.getElementById('summary-body').innerHTML = '<p class="empty-note" style="color:var(--red)">STEP 4: skipped query — client was never created (see error above)</p>';
+    return;
+  }
+  document.getElementById('summary-body').innerHTML = '<p class="empty-note">STEP 4: about to query Supabase...</p>';
+  const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Query timed out after 10s')), 10000));
+  try{
+    const { data, error } = await Promise.race([
+      supabase.from('booking_requests').select('*').order('start_date'),
+      timeoutPromise
+    ]);
+    document.getElementById('summary-body').innerHTML = '<p class="empty-note">STEP 5: query returned. error=' + JSON.stringify(error) + ' rows=' + (data ? data.length : 'null') + '</p>';
+    if(error){ requests = []; return; }
+    requests = (data || []).map(rowToRequest);
+  }catch(e){
+    document.getElementById('summary-body').innerHTML = '<p class="empty-note" style="color:var(--red)">STEP 5 FAILED/TIMED OUT: ' + e.message + '</p>';
+    requests = [];
+  }
 }
 async function saveAll(){
   // This test is read-only — writes aren't tested here.
