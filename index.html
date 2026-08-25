@@ -20,61 +20,83 @@
   ul{font-family:var(--font-body);}
   input{background:var(--panel-raised);border:1px solid var(--line-strong);color:var(--snow);padding:8px 12px;border-radius:8px;}
   button{background:var(--amber);border:none;color:#1B1208;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer;}
+  table{border-collapse:separate;border-spacing:3px;margin-top:16px;}
+  td, th{padding:6px 10px;font-size:12px;text-align:center;}
+  td.cell{background:var(--panel-raised);border-radius:6px;min-width:40px;}
+  td.cell.has-booking{background:rgba(111,169,107,0.4);}
 </style>
 </head>
 <body>
 
-<h1>Ski Calendar (base test)</h1>
+<h1>Ski Calendar (base test - grid)</h1>
 <div id="status">Waiting for script to run...</div>
-<ul id="list"></ul>
+<table id="cal-table"></table>
 
 <hr>
 <input id="name-input" placeholder="Your name">
-<button id="add-btn">Add test booking</button>
+<button id="add-btn">Add test booking (Room 1, Jan 16)</button>
 
 <script>
 document.getElementById('status').textContent = 'Script running. Connecting...';
 
-var supabase = window.supabase.createClient(
+const supabase = window.supabase.createClient(
   'https://kmjxhtgkcvkilluquogw.supabase.co',
   'sb_publishable_oQaCmNxNMRb9PECr806PuA_Ysi9htcS'
 );
 
-function refresh() {
-  document.getElementById('status').textContent = 'Loading rows...';
-  supabase.from('booking_requests').select('*').then(function(result) {
-    if (result.error) {
-      document.getElementById('status').textContent = 'ERROR: ' + JSON.stringify(result.error);
-      return;
-    }
-    document.getElementById('status').textContent = 'Loaded OK. ' + result.data.length + ' rows.';
-    var list = document.getElementById('list');
-    list.innerHTML = '';
-    result.data.forEach(function(row) {
-      var li = document.createElement('li');
-      li.textContent = row.guest_name + ' - ' + row.room_id + ' - ' + row.status;
-      list.appendChild(li);
+const ROOMS = ['r1', 'r2', 'r3'];
+function buildDates(){
+  const dates = [];
+  let d = new Date('2027-01-16T00:00:00Z');
+  const end = new Date('2027-02-12T00:00:00Z');
+  while(d <= end){ dates.push(new Date(d)); d.setUTCDate(d.getUTCDate()+1); }
+  return dates;
+}
+const DATES = buildDates();
+function dkey(d){ return d.toISOString().slice(0,10); }
+
+let requests = [];
+
+function renderTable(){
+  const table = document.getElementById('cal-table');
+  let html = '<tr><th></th>';
+  DATES.forEach(d => { html += '<th>' + d.getUTCDate() + '</th>'; });
+  html += '</tr>';
+  ROOMS.forEach(roomId => {
+    html += '<tr><td>' + roomId + '</td>';
+    DATES.forEach(d => {
+      const date = dkey(d);
+      const has = requests.some(r => r.room_id === roomId && date >= r.start_date && date <= r.end_date);
+      html += '<td class="cell' + (has ? ' has-booking' : '') + '"></td>';
     });
+    html += '</tr>';
   });
+  table.innerHTML = html;
 }
 
-document.getElementById('add-btn').addEventListener('click', function() {
-  var name = document.getElementById('name-input').value || 'Test Person';
-  supabase.from('booking_requests').insert({
-    room_id: 'r1',
-    slot_index: 0,
-    guest_name: name,
-    start_date: '2027-01-16',
-    end_date: '2027-01-16',
-    status: 'pending'
-  }).then(function(result) {
-    if (result.error) {
-      alert('Insert error: ' + JSON.stringify(result.error));
-    }
-    refresh();
+async function refresh(){
+  document.getElementById('status').textContent = 'Loading rows...';
+  const { data, error } = await supabase.from('booking_requests').select('*');
+  if(error){
+    document.getElementById('status').textContent = 'ERROR: ' + JSON.stringify(error);
+    return;
+  }
+  requests = data;
+  document.getElementById('status').textContent = 'Loaded OK. ' + data.length + ' rows.';
+  renderTable();
+}
+
+document.getElementById('add-btn').addEventListener('click', async () => {
+  const name = document.getElementById('name-input').value || 'Test Person';
+  const { error } = await supabase.from('booking_requests').insert({
+    room_id: 'r1', slot_index: 0, guest_name: name,
+    start_date: '2027-01-16', end_date: '2027-01-16', status: 'pending'
   });
+  if(error) alert('Insert error: ' + JSON.stringify(error));
+  await refresh();
 });
 
+renderTable();
 refresh();
 </script>
 
