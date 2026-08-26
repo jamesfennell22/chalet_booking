@@ -48,72 +48,43 @@
   /* ---- Calendar ---- */
   .cal-scroll{overflow-x:auto;padding:32px 0 8px;margin:0 32px;}
   table{border-collapse:separate;border-spacing:3px;min-width:100%;user-select:none;}
-  .room-col{position:sticky;left:0;background:var(--bg);z-index:3;text-align:left;padding:8px 20px 8px 2px;min-width:158px;}
+  .room-col{position:sticky;left:0;background:var(--bg);z-index:3;text-align:left;padding:8px 16px 8px 2px;min-width:150px;vertical-align:middle;}
   th.room-col{z-index:4;}
-  .day-col{min-width:56px;text-align:center;padding:4px 2px 8px;font-family:var(--font-mono);}
+  .slot-label-col{
+    position:sticky;left:150px;background:var(--bg);z-index:3;text-align:left;
+    padding:0 14px 0 0;min-width:78px;font-family:var(--font-mono);font-size:11px;color:var(--muted);
+  }
+  th.slot-label-col{z-index:4;}
+  .day-col{min-width:44px;text-align:center;padding:4px 2px 8px;font-family:var(--font-mono);}
   .dow{font-size:9px;letter-spacing:0.04em;color:var(--muted);text-transform:uppercase;}
   .dnum{font-size:13.5px;font-weight:500;margin-top:3px;}
   .weekend .dow, .weekend .dnum{color:var(--amber);}
 
+  tr.room-start .room-col, tr.room-start .slot-label-col, tr.room-start td.cell{padding-top:9px;}
+
   tr.room-row td.cell{
-    height:64px;text-align:center;vertical-align:middle;cursor:pointer;
-    border-radius:7px;transition:filter 0.12s ease;position:relative;
-    display:table-cell;
+    height:30px;text-align:center;vertical-align:middle;cursor:pointer;
+    border-radius:6px;transition:filter 0.12s ease;position:relative;
+    font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--snow);
   }
   tr.room-row td.cell:hover{filter:brightness(1.3);}
   tr.room-row td.cell.selecting{background:var(--amber-soft) !important;outline:1.5px solid var(--amber);outline-offset:-1.5px;}
-  .cell-slots{width:100%;height:100%;padding:4px;}
-
-  .bed-frame{
-    display:flex;flex-direction:column;width:100%;height:100%;
-    border-radius:9px 9px 4px 4px;overflow:hidden;position:relative;
-    border:1px solid var(--line-strong);
-  }
-  .type-double .slot-mini{flex:1;width:100%;height:auto;border-radius:0;}
-  .type-double .slot-mini:first-child{border-bottom:1.5px solid var(--bg);}
-
-  .bunk-frame{
-    display:flex;flex-direction:column;width:100%;height:100%;
-    border-radius:3px;overflow:hidden;position:relative;
-    border:1px solid var(--line-strong);
-    padding-right:5px;
-  }
-  .bunk-frame::after{
-    content:'';position:absolute;right:0;top:0;bottom:0;width:4px;
-    background:repeating-linear-gradient(180deg, var(--line-strong) 0 2px, transparent 2px 4.5px);
-  }
-  .type-bunk .slot-mini{flex:1;width:100%;height:auto;border-radius:0;}
-  .type-bunk .slot-mini:first-child{border-bottom:1.5px solid var(--bg);}
-
-  .slot-mini{
-    font-family:var(--font-mono);font-size:9px;font-weight:600;
-    color:var(--snow);position:relative;
-    display:flex;align-items:center;justify-content:center;
-  }
-  .slot-mini::before{
-    content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);
-    width:30%;height:3px;border-radius:2px;background:rgba(242,240,234,0.32);
-  }
   .slot-empty{border:1px dashed var(--line-strong);color:var(--muted);background:rgba(242,240,234,0.02);}
-  .slot-empty::before{background:rgba(242,240,234,0.12);}
   .slot-pending{background:rgba(226,152,75,0.38);}
   .slot-confirmed{background:rgba(111,169,107,0.45);}
 
   .room-name-cell b{font-size:13.5px;font-weight:600;display:block;}
   .room-name-cell span{font-size:11px;color:var(--muted);font-family:var(--font-mono);}
 
-  /* ---- Summary ---- */
-  .summary{margin:32px 32px 0;padding-top:22px;border-top:1px solid var(--line);}
-  .summary h2{font-family:var(--font-display);font-size:19px;font-weight:600;margin:0 0 16px;letter-spacing:-0.01em;}
-  .bar-row{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:12px;margin-bottom:8px;font-size:13px;}
-  .bar-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .bar-track{background:var(--panel-raised);border-radius:5px;height:8px;overflow:hidden;display:flex;}
-  .bar-fill{background:linear-gradient(90deg,var(--amber),#F4C98A);height:100%;}
-  .bar-fill.confirmed{background:linear-gradient(90deg,var(--green),#9BCB97);border-radius:5px 0 0 5px;}
-  .bar-count{font-family:var(--font-mono);color:var(--muted);text-align:right;font-size:11.5px;white-space:nowrap;}
+  /* ---- Error banner ---- */
+  .error-banner{
+    color:var(--red);font-size:13px;font-family:var(--font-mono);
+    background:rgba(196,87,76,0.1);border:1px solid rgba(196,87,76,0.3);
+    border-radius:8px;padding:10px 14px;margin:0 0 16px;
+  }
   .empty-note{color:var(--muted);font-size:13px;}
 
-  .hint{font-size:12.5px;color:var(--muted);text-align:center;margin:30px 32px 0;}
+  .hint{font-size:12.5px;color:var(--muted);text-align:center;margin:24px 32px 0;}
 
   /* ---- Shared overlay/modal shell ---- */
   .overlay{position:fixed;inset:0;background:rgba(6,12,9,0.6);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
@@ -179,7 +150,7 @@
 
   @media (max-width:640px){
     header{padding:32px 18px 22px;}
-    .cal-scroll, .summary, .hint, .admin-body{margin-left:18px;margin-right:18px;padding-left:0;padding-right:0;}
+    .cal-scroll, .hint, .admin-body{margin-left:18px;margin-right:18px;padding-left:0;padding-right:0;}
     .admin-link{top:16px;right:16px;}
   }
 </style>
@@ -197,11 +168,9 @@
     <p class="sub">Nights of <b>16 Jan - 12 Feb</b> &nbsp;-&nbsp; 3 rooms &nbsp;-&nbsp; 6 guests &nbsp;-&nbsp; departure 13 Feb</p>
   </header>
 
-  <div class="cal-scroll"><table id="cal-table"></table></div>
-
-  <div class="summary">
-    <h2>Nights requested</h2>
-    <div id="summary-body"><p class="empty-note">Loading...</p></div>
+  <div class="cal-scroll">
+    <p id="error-banner" class="error-banner hidden"></p>
+    <table id="cal-table"></table>
   </div>
 
   <p class="hint">Click any night -- booked or not -- to open it. From there anyone can request a half, a whole room, or a bunk, or remove an existing booking, no login needed. Liz approves each request before it's confirmed.</p>
@@ -246,19 +215,28 @@
 </div>
 
 <script>
-document.getElementById('summary-body').innerHTML = '<p class="empty-note">Script started running, connecting to Supabase...</p>';
+(function(){
+  const el = document.getElementById('error-banner');
+  el.textContent = 'Script started running, connecting to Supabase...';
+  el.classList.remove('hidden');
+})();
 
 window.addEventListener('error', function(e){
   console.error('UNCAUGHT ERROR:', e.error || e.message, e);
-  const el = document.getElementById('summary-body');
-  if(el) el.innerHTML = '<p class="empty-note" style="color:var(--red)">JavaScript error: ' + (e.message || 'unknown error') +
-    (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '') + '</p>';
+  const el = document.getElementById('error-banner');
+  if(el){
+    el.textContent = 'JavaScript error: ' + (e.message || 'unknown error') +
+      (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '');
+    el.classList.remove('hidden');
+  }
 });
 window.addEventListener('unhandledrejection', function(e){
   console.error('UNHANDLED PROMISE REJECTION:', e.reason);
-  const el = document.getElementById('summary-body');
-  if(el) el.innerHTML = '<p class="empty-note" style="color:var(--red)">Unhandled error: ' +
-    (e.reason && (e.reason.message || JSON.stringify(e.reason)) || String(e.reason)) + '</p>';
+  const el = document.getElementById('error-banner');
+  if(el){
+    el.textContent = 'Unhandled error: ' + (e.reason && (e.reason.message || JSON.stringify(e.reason)) || String(e.reason));
+    el.classList.remove('hidden');
+  }
 });
 
 const TRIP_START = '2027-01-16';
@@ -354,7 +332,6 @@ function setupRealtime(){
         try{
           await loadAll();
           renderTable();
-          renderSummary();
           if(panelRoom) renderModalBody();
           if(isAdmin && !document.getElementById('admin-view').classList.contains('hidden')) renderAdmin();
         }catch(e){ console.error('Realtime refresh failed', e); }
@@ -421,7 +398,7 @@ async function updateRequestFields(id, fields){
 /* ---- Calendar rendering ---- */
 function renderTable(){
   const table = document.getElementById('cal-table');
-  let thead = '<thead><tr><th class="room-col"></th>';
+  let thead = '<thead><tr><th class="room-col"></th><th class="slot-label-col"></th>';
   DATES.forEach(d => {
     const isWeekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
     thead += `<th class="day-col ${isWeekend?'weekend':''}">
@@ -433,23 +410,26 @@ function renderTable(){
 
   let tbody = '<tbody>';
   ROOMS.forEach(r => {
-    tbody += `<tr class="room-row"><td class="room-col"><div class="room-name-cell"><b>${r.name}</b><span>${r.desc}</span></div></td>`;
-    DATES.forEach(d => {
-      const isWeekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
-      const date = dkey(d);
-      const slots = [0,1].map(idx => {
+    [0,1].forEach(idx => {
+      tbody += '<tr class="room-row' + (idx === 0 ? ' room-start' : '') + '">';
+      if(idx === 0){
+        tbody += `<td class="room-col" rowspan="2"><div class="room-name-cell"><b>${r.name}</b><span>${r.desc}</span></div></td>`;
+      }
+      tbody += `<td class="slot-label-col">${r.slotLabels[idx]}</td>`;
+      DATES.forEach(d => {
+        const isWeekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
+        const date = dkey(d);
         const req = activeRequestFor(r.id, idx, date);
-        if(!req) return '<div class="slot-mini slot-empty">-</div>';
-        const cls = req.status === 'confirmed' ? 'slot-confirmed' : 'slot-pending';
-        return `<div class="slot-mini ${cls}" title="${req.name} - ${req.status} -- click to view or remove">${initials(req.name)}</div>`;
-      }).join('');
-      tbody += `<td class="cell ${isWeekend?'weekend':''}" data-room="${r.id}" data-date="${date}">
-        <div class="cell-slots type-${r.type}">
-          <div class="${r.type === 'double' ? 'bed-frame' : 'bunk-frame'}">${slots}</div>
-        </div>
-      </td>`;
+        let cls = 'slot-empty', label = '-', title = r.slotLabels[idx] + ' -- open';
+        if(req){
+          cls = req.status === 'confirmed' ? 'slot-confirmed' : 'slot-pending';
+          label = initials(req.name);
+          title = req.name + ' - ' + req.status + ' -- click to view or remove';
+        }
+        tbody += `<td class="cell ${cls} ${isWeekend?'weekend':''}" data-room="${r.id}" data-date="${date}" title="${title}">${label}</td>`;
+      });
+      tbody += '</tr>';
     });
-    tbody += '</tr>';
   });
   tbody += '</tbody>';
   table.innerHTML = thead + tbody;
@@ -562,8 +542,7 @@ document.getElementById('modal-body').addEventListener('click', async (e) => {
     if(!n0 || !n1){ notify('Enter both names, or use the single-slot forms below for just one person.'); return; }
     await addRequest(panelRoom, 0, n0, panelLo, panelHi);
     await addRequest(panelRoom, 1, n1, panelLo, panelHi);
-    renderModalBody(); renderTable(); renderSummary();
-    return;
+    renderModalBody(); renderTable();    return;
   }
 
   const requestBtn = e.target.closest('.slot-request-btn');
@@ -572,8 +551,7 @@ document.getElementById('modal-body').addEventListener('click', async (e) => {
     const input = document.querySelector(`.slot-input[data-slot="${idx}"]`);
     const res = await addRequest(panelRoom, idx, input.value, panelLo, panelHi);
     if(!res.ok){ notify(res.msg); return; }
-    renderModalBody(); renderTable(); renderSummary();
-    return;
+    renderModalBody(); renderTable();    return;
   }
 
   const removeBtn = e.target.closest('.remove-btn');
@@ -584,8 +562,7 @@ document.getElementById('modal-body').addEventListener('click', async (e) => {
       return;
     }
     await removeRequest(removeBtn.dataset.id);
-    renderModalBody(); renderTable(); renderSummary();
-    return;
+    renderModalBody(); renderTable();    return;
   }
 });
 
@@ -601,39 +578,15 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && !document.getElementById('overlay').classList.contains('hidden')) document.getElementById('modal-close').click();
 });
 
-/* ---- Summary ---- */
-function renderSummary(){
-  const el = document.getElementById('summary-body');
+/* ---- Error banner (replaces old summary section for surfacing setup/load errors) ---- */
+function showError(){
+  const el = document.getElementById('error-banner');
   if(setupError){
-    el.innerHTML = '<p class="empty-note" style="color:var(--red)">' + setupError + '</p>';
-    return;
+    el.textContent = setupError;
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
   }
-  const totals = {};
-  requests.forEach(r => {
-    if(isInactive(r.status)) return;
-    totals[r.name] = totals[r.name] || {confirmed:0, pending:0};
-    totals[r.name][r.status] += nightsOf(r);
-  });
-  const names = Object.keys(totals).sort((a,b) => (totals[b].confirmed - totals[a].confirmed) || (totals[b].pending - totals[a].pending));
-  if(names.length === 0){
-    el.innerHTML = '<p class="empty-note">No requests yet -- click a cell in the calendar to start.</p>';
-    return;
-  }
-  const max = Math.max(...names.map(n => totals[n].confirmed + totals[n].pending), 1);
-  el.innerHTML = names.map(n => {
-    const t = totals[n];
-    const confirmedPct = (t.confirmed / max * 100).toFixed(0);
-    const pendingPct = (t.pending / max * 100).toFixed(0);
-    const countText = t.pending ? `${t.confirmed}n <span style="opacity:0.6">(+${t.pending}p)</span>` : `${t.confirmed}n`;
-    return `<div class="bar-row">
-      <div class="bar-name">${n}</div>
-      <div class="bar-track">
-        <div class="bar-fill confirmed" style="width:${confirmedPct}%"></div>
-        <div class="bar-fill" style="width:${pendingPct}%"></div>
-      </div>
-      <div class="bar-count">${countText}</div>
-    </div>`;
-  }).join('');
 }
 
 /* ---- Admin: password gate ---- */
@@ -669,8 +622,7 @@ function showAdminView(){
 function showCalendarView(){
   document.getElementById('admin-view').classList.add('hidden');
   document.getElementById('calendar-view').classList.remove('hidden');
-  renderTable(); renderSummary();
-}
+  renderTable();}
 document.getElementById('admin-back').addEventListener('click', showCalendarView);
 document.getElementById('admin-logout').addEventListener('click', () => { isAdmin = false; showCalendarView(); });
 
@@ -756,13 +708,13 @@ async function init(){
   const timeout = setTimeout(() => {
     if(!setupError){
       setupError = 'Still stuck after 8 seconds -- likely a Supabase connection or permissions issue. Check the table name, RLS policies, and that Realtime is enabled.';
-      renderSummary();
+      showError();
     }
   }, 8000);
   await loadAll();
   clearTimeout(timeout);
   renderTable();
-  renderSummary();
+  showError();
   try{ setupRealtime(); }catch(e){ console.error('setupRealtime failed (non-fatal):', e); }
 }
 init();
