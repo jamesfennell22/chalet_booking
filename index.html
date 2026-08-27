@@ -32,19 +32,21 @@
   .hidden{display:none !important;}
 
   /* ---- Header ---- */
-  header{position:relative;overflow:hidden;padding:52px 32px 34px;background:linear-gradient(155deg,#132938 0%, var(--bg) 65%);border-bottom:1px solid var(--line);}
-  .snow-dots{
-    position:absolute;inset:0;pointer-events:none;opacity:0.55;
-    background-image:
-      radial-gradient(circle, rgba(245,250,253,0.9) 1px, transparent 1.5px),
-      radial-gradient(circle, rgba(245,250,253,0.7) 1px, transparent 1.5px),
-      radial-gradient(circle, rgba(245,250,253,0.5) 1px, transparent 1.5px);
-    background-size: 180px 140px, 240px 180px, 130px 110px;
-    background-position: 20px 30px, 160px 70px, 90px 10px;
+  header{position:relative;overflow:hidden;padding:52px 32px 34px;background:linear-gradient(155deg,#1A3A4D 0%, var(--bg) 70%);border-bottom:1px solid var(--line);}
+  .snowfall{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .flake{
+    position:absolute;top:-10%;color:var(--snow);opacity:0.75;
+    animation-name:fall;animation-timing-function:linear;animation-iteration-count:infinite;
+    text-shadow:0 0 4px rgba(245,250,253,0.5);
   }
-  .contour{position:absolute;left:0;right:0;bottom:0;width:100%;height:64px;opacity:0.5;}
+  @keyframes fall{
+    0%{transform:translateY(0) translateX(0) rotate(0deg);}
+    50%{transform:translateY(60px) translateX(10px) rotate(180deg);}
+    100%{transform:translateY(130px) translateX(-6px) rotate(360deg);}
+  }
+  .contour{position:absolute;left:0;right:0;bottom:0;width:100%;height:64px;}
   .eyebrow{font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ice);margin:0 0 14px;position:relative;z-index:2;}
-  h1{font-family:var(--font-display);font-weight:600;font-size:clamp(36px,5vw,54px);margin:0 0 12px;letter-spacing:-0.015em;position:relative;z-index:2;}
+  h1{font-family:var(--font-display);font-weight:600;font-size:clamp(36px,5vw,54px);margin:0 0 12px;letter-spacing:-0.015em;position:relative;z-index:2;text-shadow:0 0 24px rgba(143,211,236,0.25);}
   .sub{font-size:14px;color:var(--muted);margin:0;position:relative;z-index:2;letter-spacing:0.01em;}
   .sub b{color:var(--snow);font-weight:600;}
   .admin-link{
@@ -99,8 +101,8 @@
   .hint{font-size:12.5px;color:var(--muted);text-align:center;margin:24px 32px 0;}
 
   /* ---- Shared overlay/modal shell ---- */
-  .overlay{position:fixed;inset:0;background:rgba(6,12,9,0.6);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
-  .modal{background:var(--panel);border:1px solid var(--line-strong);border-radius:14px;width:100%;max-width:420px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-height:85vh;overflow-y:auto;}
+  .overlay{position:fixed;inset:0;background:rgba(6,14,20,0.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal{background:var(--panel);border:1px solid var(--line-strong);border-radius:14px;width:100%;max-width:420px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(143,211,236,0.06);max-height:85vh;overflow-y:auto;}
   .modal-room{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
   .modal-room b{font-family:var(--font-display);font-size:18px;font-weight:600;}
   .modal-range{font-family:var(--font-mono);font-size:12.5px;color:var(--muted);margin:0 0 18px;}
@@ -141,7 +143,18 @@
   .admin-section h3{font-family:var(--font-display);font-size:17px;font-weight:600;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
   .admin-section{margin-bottom:32px;}
   .count-pill{font-family:var(--font-mono);font-size:11px;color:var(--muted);background:var(--panel-raised);padding:2px 8px;border-radius:999px;}
-  .admin-row{background:var(--panel);border:1px solid var(--line-strong);border-radius:10px;padding:14px;margin-bottom:10px;}
+  .person-group{
+    background:var(--panel-raised);border:1px solid var(--line-strong);border-radius:12px;
+    padding:12px;margin-bottom:14px;
+  }
+  .person-group-header{
+    display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+    padding:2px 4px 10px;flex-wrap:wrap;
+  }
+  .person-name{font-family:var(--font-display);font-size:15px;font-weight:600;}
+  .person-meta{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+  .admin-row{background:var(--panel);border:1px solid var(--line-strong);border-radius:10px;padding:14px;margin-bottom:8px;}
+  .admin-row:last-child{margin-bottom:0;}
   .admin-row-main{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
   .admin-row-main select, .admin-row-main input{
     background:var(--panel-raised);border:1px solid var(--line-strong);color:var(--snow);
@@ -172,9 +185,29 @@
 <div class="wrap" id="calendar-view">
   <header>
     <button class="admin-link" id="admin-link">Admin</button>
-    <div class="snow-dots"></div>
+    <div class="snowfall">
+      <span class="flake" style="left:6%;font-size:14px;animation-duration:7s;animation-delay:0s;">&#10052;</span>
+      <span class="flake" style="left:16%;font-size:9px;animation-duration:5s;animation-delay:1.2s;">&#10052;</span>
+      <span class="flake" style="left:28%;font-size:12px;animation-duration:8.5s;animation-delay:2.4s;">&#10052;</span>
+      <span class="flake" style="left:40%;font-size:8px;animation-duration:6s;animation-delay:0.6s;">&#10052;</span>
+      <span class="flake" style="left:52%;font-size:15px;animation-duration:9s;animation-delay:3s;">&#10052;</span>
+      <span class="flake" style="left:63%;font-size:10px;animation-duration:5.5s;animation-delay:1.8s;">&#10052;</span>
+      <span class="flake" style="left:74%;font-size:13px;animation-duration:7.5s;animation-delay:0.3s;">&#10052;</span>
+      <span class="flake" style="left:85%;font-size:9px;animation-duration:6.5s;animation-delay:2.7s;">&#10052;</span>
+      <span class="flake" style="left:94%;font-size:11px;animation-duration:8s;animation-delay:1.5s;">&#10052;</span>
+      <span class="flake" style="left:20%;font-size:7px;animation-duration:5.8s;animation-delay:4s;">&#10052;</span>
+      <span class="flake" style="left:47%;font-size:8px;animation-duration:6.8s;animation-delay:3.6s;">&#10052;</span>
+      <span class="flake" style="left:80%;font-size:8px;animation-duration:7.2s;animation-delay:4.5s;">&#10052;</span>
+    </div>
     <svg class="contour" viewBox="0 0 1100 64" preserveAspectRatio="none">
-      <path d="M0,50 L140,30 L260,46 L400,18 L560,42 L720,22 L880,44 L1000,28 L1100,38" fill="none" style="stroke:var(--ice)" stroke-width="1" opacity="0.55"/>
+      <polygon points="0,64 0,42 90,14 150,34 230,10 320,38 420,16 520,40 620,12 720,36 820,18 920,40 1020,20 1100,34 1100,64"
+        fill="var(--panel-raised)" opacity="0.9"/>
+      <polygon points="0,42 90,14 100,20 40,42" fill="var(--snow)" opacity="0.5"/>
+      <polygon points="150,34 230,10 240,16 175,38" fill="var(--snow)" opacity="0.5"/>
+      <polygon points="320,38 420,16 430,22 360,40" fill="var(--snow)" opacity="0.5"/>
+      <polygon points="520,40 620,12 630,18 555,40" fill="var(--snow)" opacity="0.5"/>
+      <polygon points="720,36 820,18 828,23 765,38" fill="var(--snow)" opacity="0.5"/>
+      <polygon points="920,40 1020,20 1028,25 955,40" fill="var(--snow)" opacity="0.5"/>
     </svg>
     <p class="eyebrow">Shared trip calendar</p>
     <h1>Ski Calendar</h1>
@@ -667,13 +700,38 @@ function renderAdmin(){
     {status:'rejected', title:'Rejected'}
   ];
   body.innerHTML = sections.map(sec => {
-    const list = requests.filter(r => r.status === sec.status).sort((a,b) => a.startDate.localeCompare(b.startDate));
+    const list = requests.filter(r => r.status === sec.status);
+    const groups = groupByPerson(list);
     return `<div class="admin-section">
       <h3>${sec.title} <span class="count-pill">${list.length}</span></h3>
-      ${list.length === 0 ? '<p class="empty-note">Nothing here.</p>' : list.map(r => adminRowHtml(r)).join('')}
+      ${groups.length === 0 ? '<p class="empty-note">Nothing here.</p>' : groups.map(g => personGroupHtml(g)).join('')}
     </div>`;
   }).join('');
   attachAdminHandlers();
+}
+
+function groupByPerson(list){
+  const map = new Map();
+  list.forEach(r => {
+    const key = r.name.trim().toLowerCase();
+    if(!map.has(key)) map.set(key, { name: r.name.trim(), requests: [] });
+    map.get(key).requests.push(r);
+  });
+  const groups = [...map.values()];
+  groups.forEach(g => g.requests.sort((a,b) => a.startDate.localeCompare(b.startDate)));
+  groups.sort((a,b) => a.requests[0].startDate.localeCompare(b.requests[0].startDate));
+  return groups;
+}
+
+function personGroupHtml(group){
+  const totalNights = group.requests.reduce((sum, r) => sum + nightsOf(r), 0);
+  return `<div class="person-group">
+    <div class="person-group-header">
+      <span class="person-name">${group.name}</span>
+      <span class="person-meta">${group.requests.length} booking${group.requests.length > 1 ? 's' : ''} -- ${totalNights} night${totalNights > 1 ? 's' : ''} total</span>
+    </div>
+    ${group.requests.map(r => adminRowHtml(r)).join('')}
+  </div>`;
 }
 
 function adminRowHtml(r){
