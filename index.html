@@ -505,25 +505,54 @@ function renderTable(){
 /* ---- Drag selection across nights within one room row ---- */
 let isDragging = false, dragRoom = null, dragStart = null, dragEnd = null;
 let touchStartX = 0, touchStartY = 0, touchRoom = null, touchDate = null, touchMoved = false;
+let touchLongPressTimer = null, touchDragEngaged = false;
+const LONG_PRESS_MS = 650;
 
 function attachCellHandlers(){
   document.querySelectorAll('td.cell').forEach(td => {
     td.addEventListener('mousedown', e => { e.preventDefault(); startDrag(td.dataset.room, td.dataset.date); });
     td.addEventListener('mouseenter', () => updateDrag(td.dataset.room, td.dataset.date));
 
-    // Touch is handled completely separately from mouse drag-select: a plain tap opens a
-    // single night, and any noticeable finger movement is assumed to be a page scroll and
-    // is left entirely alone (no preventDefault, no partial selection), so scrolling never
-    // gets hijacked. Multi-night ranges on touch are chosen via the date fields in the panel.
+    // Touch has three outcomes, decided as the gesture unfolds:
+    //  1. Quick tap (released before the hold completes, barely moved) -> open a single night.
+    //  2. Immediate movement before the hold completes -> treated as a page scroll, ignored entirely.
+    //  3. Held still past LONG_PRESS_MS -> drag-select mode engages (with a light haptic cue),
+    //     and any subsequent movement extends the selected range like it does with a mouse.
     td.addEventListener('touchstart', e => {
       const t = e.touches[0];
       touchStartX = t.clientX; touchStartY = t.clientY;
       touchRoom = td.dataset.room; touchDate = td.dataset.date; touchMoved = false;
+      touchDragEngaged = false;
+      clearTimeout(touchLongPressTimer);
+      touchLongPressTimer = setTimeout(() => {
+        touchDragEngaged = true;
+        startDrag(touchRoom, touchDate);
+        if(navigator.vibrate) navigator.vibrate(12);
+      }, LONG_PRESS_MS);
     }, {passive:true});
+
     td.addEventListener('touchmove', e => {
       const t = e.touches[0];
       const dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
-      if(Math.sqrt(dx*dx + dy*dy) > 10) touchMoved = true;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if(!touchDragEngaged){
+        if(dist > 10){
+          touchMoved = true;
+          clearTimeout(touchLongPressTimer);
+        }
+        return;
+      }
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      const cell = el && el.closest('td.cell');
+      if(cell) updateDrag(cell.dataset.room, cell.dataset.date);
+    }, {passive:true});
+
+    td.addEventListener('touchcancel', () => {
+      clearTimeout(touchLongPressTimer);
+      touchDragEngaged = false;
+      isDragging = false;
+      touchRoom = null; touchDate = null; touchMoved = false;
+      document.querySelectorAll('td.cell.selecting').forEach(c => c.classList.remove('selecting'));
     }, {passive:true});
   });
 }
@@ -544,8 +573,15 @@ function endDrag(){
 }
 document.addEventListener('mouseup', endDrag);
 document.addEventListener('touchend', () => {
-  if(touchRoom && !touchMoved){
+  clearTimeout(touchLongPressTimer);
+  if(touchDragEngaged){
+    touchDragEngaged = false;
+    isDragging = false;
+    openPanel(dragRoom, dragStart, dragEnd);
+  } else if(touchRoom && !touchMoved){
     openPanel(touchRoom, touchDate, touchDate);
+  } else {
+    document.querySelectorAll('td.cell.selecting').forEach(c => c.classList.remove('selecting'));
   }
   touchRoom = null; touchDate = null; touchMoved = false;
 });
