@@ -105,6 +105,17 @@
   .modal{background:var(--panel);border:1px solid var(--line-strong);border-radius:14px;width:100%;max-width:420px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(143,211,236,0.06);max-height:85vh;overflow-y:auto;}
   .modal-room{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
   .modal-room b{font-family:var(--font-display);font-size:18px;font-weight:600;}
+  .range-editor{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+  .range-editor input[type=date]{
+    background:var(--panel-raised);border:1px solid var(--line-strong);color:var(--snow);
+    font-family:var(--font-body);font-size:12.5px;padding:6px 8px;border-radius:7px;outline:none;
+  }
+  .range-editor input[type=date]:focus{border-color:var(--ice);}
+  .range-sep{font-size:11.5px;color:var(--muted);}
+  .range-editor button{
+    background:var(--ice);border:none;color:#0A1620;font-weight:600;font-size:12px;
+    padding:6px 12px;border-radius:7px;cursor:pointer;
+  }
   .modal-range{font-family:var(--font-mono);font-size:12.5px;color:var(--muted);margin:0 0 18px;}
 
   .slot-block{background:var(--panel-raised);border:1px solid var(--line-strong);border-radius:10px;padding:14px;margin-bottom:10px;}
@@ -239,6 +250,12 @@
 <div class="overlay hidden" id="overlay">
   <div class="modal">
     <div class="modal-room"><b id="modal-room-name"></b></div>
+    <div class="range-editor">
+      <input type="date" id="range-start" min="2027-01-16" max="2027-02-12">
+      <span class="range-sep">to</span>
+      <input type="date" id="range-end" min="2027-01-16" max="2027-02-12">
+      <button type="button" id="range-update">Update</button>
+    </div>
     <p class="modal-range" id="modal-range"></p>
     <div id="modal-body"></div>
     <datalist id="guest-list"></datalist>
@@ -487,32 +504,26 @@ function renderTable(){
 
 /* ---- Drag selection across nights within one room row ---- */
 let isDragging = false, dragRoom = null, dragStart = null, dragEnd = null;
-let touchStartX = 0, touchStartY = 0, touchIsScroll = false;
+let touchStartX = 0, touchStartY = 0, touchRoom = null, touchDate = null, touchMoved = false;
 
 function attachCellHandlers(){
   document.querySelectorAll('td.cell').forEach(td => {
     td.addEventListener('mousedown', e => { e.preventDefault(); startDrag(td.dataset.room, td.dataset.date); });
     td.addEventListener('mouseenter', () => updateDrag(td.dataset.room, td.dataset.date));
+
+    // Touch is handled completely separately from mouse drag-select: a plain tap opens a
+    // single night, and any noticeable finger movement is assumed to be a page scroll and
+    // is left entirely alone (no preventDefault, no partial selection), so scrolling never
+    // gets hijacked. Multi-night ranges on touch are chosen via the date fields in the panel.
     td.addEventListener('touchstart', e => {
       const t = e.touches[0];
-      touchStartX = t.clientX; touchStartY = t.clientY; touchIsScroll = false;
-      startDrag(td.dataset.room, td.dataset.date);
+      touchStartX = t.clientX; touchStartY = t.clientY;
+      touchRoom = td.dataset.room; touchDate = td.dataset.date; touchMoved = false;
     }, {passive:true});
     td.addEventListener('touchmove', e => {
       const t = e.touches[0];
-      const dx = t.clientX - touchStartX;
-      const dy = t.clientY - touchStartY;
-      if(!touchIsScroll && Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)){
-        // Finger is moving mostly vertically -- this is a page scroll, not a date selection.
-        touchIsScroll = true;
-        isDragging = false;
-        document.querySelectorAll('td.cell.selecting').forEach(c => c.classList.remove('selecting'));
-        return;
-      }
-      if(touchIsScroll) return;
-      const el = document.elementFromPoint(t.clientX, t.clientY);
-      const cell = el && el.closest('td.cell');
-      if(cell) updateDrag(cell.dataset.room, cell.dataset.date);
+      const dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
+      if(Math.sqrt(dx*dx + dy*dy) > 10) touchMoved = true;
     }, {passive:true});
   });
 }
@@ -527,13 +538,17 @@ function highlightSelection(){
   });
 }
 function endDrag(){
-  if(touchIsScroll){ touchIsScroll = false; isDragging = false; return; }
   if(!isDragging) return;
   isDragging = false;
   openPanel(dragRoom, dragStart, dragEnd);
 }
 document.addEventListener('mouseup', endDrag);
-document.addEventListener('touchend', endDrag);
+document.addEventListener('touchend', () => {
+  if(touchRoom && !touchMoved){
+    openPanel(touchRoom, touchDate, touchDate);
+  }
+  touchRoom = null; touchDate = null; touchMoved = false;
+});
 
 /* ---- Booking modal ---- */
 let panelRoom = null, panelLo = null, panelHi = null;
@@ -544,13 +559,28 @@ function openPanel(roomId, a, b){
   panelHi = a <= b ? b : a;
   const room = roomOf(roomId);
   document.getElementById('modal-room-name').textContent = room.name + ' -- ' + room.desc;
-  const nights = nightsOf({startDate:panelLo, endDate:panelHi});
-  document.getElementById('modal-range').textContent =
-    panelLo === panelHi ? fmt(panelLo) + ' - 1 night' : fmt(panelLo) + ' - ' + fmt(panelHi) + ' - ' + nights + ' nights';
+  document.getElementById('range-start').value = panelLo;
+  document.getElementById('range-end').value = panelHi;
+  updateRangeSummary();
   document.getElementById('guest-list').innerHTML = knownNames().map(n => `<option value="${n}">`).join('');
   renderModalBody();
   document.getElementById('overlay').classList.remove('hidden');
 }
+function updateRangeSummary(){
+  const nights = nightsOf({startDate:panelLo, endDate:panelHi});
+  document.getElementById('modal-range').textContent =
+    panelLo === panelHi ? fmt(panelLo) + ' -- 1 night' : fmt(panelLo) + ' - ' + fmt(panelHi) + ' -- ' + nights + ' nights';
+}
+document.getElementById('range-update').addEventListener('click', () => {
+  const start = document.getElementById('range-start').value;
+  const end = document.getElementById('range-end').value;
+  if(!start || !end){ notify('Pick both a start and end date.'); return; }
+  if(start > end){ notify('The start date must be on or before the end date.'); return; }
+  panelLo = start;
+  panelHi = end;
+  updateRangeSummary();
+  renderModalBody();
+});
 
 function renderModalBody(){
   const room = roomOf(panelRoom);
